@@ -31,16 +31,58 @@ spec:
     spec:
       containers:
         - image: 10.97.40.62:5000/simpleapp
+          env:
+            - name: ilike
+              valueFrom:
+                configMapKeyRef:
+                  name: colors
+                  key: favorite
+          envFrom:
+            - configMapRef:
+                name: colors
+          volumeMounts:
+            - name: car-vol
+              mountPath: /etc/cars
+            - name: nfs-vol
+              mountPath: /opt
           imagePullPolicy: Always
           name: simpleapp
+          readinessProbe:
+            periodSeconds: 5
+            exec:
+              command:
+                - ls
+                - /etc/cars
           resources: { }
           terminationMessagePath: /dev/termination-log
           terminationMessagePolicy: File
+        - name: goproxy
+          image: registry.k8s.io/goproxy:0.1
+          ports:
+            - containerPort: 8080
+          readinessProbe:
+            tcpSocket:
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            tcpSocket:
+              port: 8080
+            initialDelaySeconds: 15
+            periodSeconds: 20
       dnsPolicy: ClusterFirst
       restartPolicy: Always
       schedulerName: default-scheduler
       securityContext: { }
       terminationGracePeriodSeconds: 30
+      volumes:
+        - name: car-vol
+          configMap:
+            defaultMode: 420
+            name: fast-car
+        - name: nfs-vol
+          persistentVolumeClaim:
+            claimName: pvc-one
 status:
   availableReplicas: 6
   conditions:

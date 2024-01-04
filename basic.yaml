@@ -10,5 +10,22 @@ spec:
       image: nginx
       ports:
         - containerPort: 80
+      volumeMounts:
+        - mountPath: "/var/log/nginx/"
+          name: weblog-pv-storage
     - name: fdlogger
       image: fluentd
+      args: [ '-c', '/etc/fluentd-config/fluent.conf' ]
+      volumeMounts:
+        - mountPath: "/var/log"
+          name: weblog-pv-storage
+        - name: log-config
+          mountPath: "/etc/fluentd-config"
+
+  volumes:
+    - name: weblog-pv-storage
+      persistentVolumeClaim:
+        claimName: weblog-pv-claim
+    - name: log-config
+      configMap:
+        name: fluentd-config
